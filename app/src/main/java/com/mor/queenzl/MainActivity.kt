@@ -10,8 +10,8 @@ import kotlin.math.ceil
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var queenChoices : ArrayList<Int>
-    lateinit var choices : ArrayList<Boolean>
+    var queenChoices : ArrayList<Int> = ArrayList()
+    var choices : ArrayList<Boolean> = ArrayList()
     var counter = 0
     var answer :Answer = Answer.None
 
@@ -41,29 +41,36 @@ class MainActivity : AppCompatActivity() {
         choices[tag] = !currentBool
         Log.e(TAG, "setPointer: choices[tag] ${choices[tag]} $tag")
 
+
         findViewById<Button>(R.id.btn_check_answer).setOnClickListener {
             counter = 0
+
+            for (v in 1 .. 64){
+                if (choices[v]){
+                    queenChoices[v]=v
+                    counter +=1
+                }
+            }
+
             for ( i in 1 until choices.size){
-                Log.e(TAG, "setPointer: $i from ${choices.size}", )
-                if(counter<9){
-                    if(choices[i]){
-                        queenChoices[i]=i
-                        counter +=1
+                if (choices[i]){
+                    Log.e(TAG, "setPointer: $i from ${choices.size}", )
+                    if(counter<9){
                         if (generateForbiddenPlacesForOneQueen(i)){
                             answer = Answer.Correct
                         } else{
                             answer = Answer.Wrong
                             updateAnswer()
-                            return@setOnClickListener
+                            //                            return@setOnClickListener
                         }
+                    }else{
+                        answer = Answer.TooMuchQueens
                     }
-                }else{
-                    answer = Answer.TooMuchQueens
                 }
-            }
 
-            initArr()
+            }
             updateAnswer()
+            initArr()
         }
 //        2. update the map of <tag,bool> and the for on the map, and then caclculate
         updateView(view)
@@ -102,10 +109,11 @@ class MainActivity : AppCompatActivity() {
         //135 D
         val p = x+y-1//סכום ההמהלכים
         var z:Int = index -((y-1)*7) //  מיקום תחילת הריצה
-        var u = 1 // counter
         for (l in 0..p){
-            forbiddenCalc.add(z)
-            z+=7
+            if(index != z){
+                forbiddenCalc.add(z)
+                z+=7
+            }
         }
 //        Log.e(TAG, "generateForbiddenPlacesForOneQueen: 2 $forbiddenCalc" )
 
@@ -114,8 +122,10 @@ class MainActivity : AppCompatActivity() {
         val t = y+(8-x)//סכום המהלכים
 
         for (b in 0..t){
-            forbiddenCalc.add(r)
-            r += 9
+            if (index!=r){
+                forbiddenCalc.add(r)
+                r += 9
+            }
         }
 
         Log.e(TAG, "forbiddenCalc:  $forbiddenCalc" )
@@ -123,12 +133,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun mergeAndCheck(forbiddenCalcList : ArrayList<Int>) :Boolean {
-        forbiddenCalcList.addAll(queenChoices)
-        return !hasDuplicates(forbiddenCalcList.toArray())
+        var queenCheckedPlaces = ArrayList<Int>()
+        for (i in queenChoices){
+            if (i > 0){
+                queenCheckedPlaces.add(i)
+            }
+        }
+        forbiddenCalcList.addAll(queenCheckedPlaces)
+        Log.e(TAG, "mergeAndCheck: ${forbiddenCalcList.sorted()}" )
+        forbiddenCalcList.trimToSize()
+        return hasDuplicates(forbiddenCalcList.toTypedArray())
     }
 
-    private fun hasDuplicates(arr: Array<Any>): Boolean { //return false if there is duplicates
-        return arr.size != arr.distinct().count();
+    private fun hasDuplicates(arr: Array<Int>): Boolean { //return false if there is duplicates
+        //sort and check take more time. check it:)
+        return arr.size == arr.distinct().count()
     }
 
 
